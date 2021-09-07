@@ -1,27 +1,25 @@
-# cmd command: python png_to_vmat.py "C:\Steam\steamapps\common\sbox\addons\stalker\materials"
+# cmd command: python tga_to_vmat.py "C:\Program Files (x86)\Steam\steamapps\common\Half-Life Alyx\content\hl2\materials\"
 # MUST run in the models folder
 
 import re, sys, os
 
-INPUT_FILE_EXT = '.png'
+INPUT_FILE_EXT = '.tga'
 OUTPUT_FILE_EXT = '.vmat'
 
 # TODO: Move to args
-NORMAL_SUFFIX = "_normal"
-ROUGHNESS_SUFFIX = "_rough"
-AO_SUFFIX = "_ao"
-COLOR_SUFFIX = "_color"
+NORMAL_SUFFIX = "_nm"
+ROUGHNESS_SUFFIX = "_bump"
 
 VMAT_BASE = '''// THIS FILE IS AUTO-GENERATED
 
 Layer0
 {
-	shader "complex.vfx"
+	shader "vr_complex.vfx"
 
 	//---- Ambient Occlusion ----
 	g_flAmbientOcclusionDirectDiffuse "0.000"
 	g_flAmbientOcclusionDirectSpecular "0.000"
-	TextureAmbientOcclusion "<texture_ao>"
+	TextureAmbientOcclusion "materials/default/default_ao.tga"
 
 	//---- Color ----
 	g_flModelTintAmount "1.000"
@@ -71,7 +69,7 @@ def walk_dir(dirname, file_ext):
 
     for root, dirs, filenames in os.walk(dirname):
         for filename in filenames:
-            if filename.lower().endswith(file_ext) and not filename.lower().endswith(NORMAL_SUFFIX + file_ext) and not filename.lower().endswith(ROUGHNESS_SUFFIX + file_ext) and not filename.lower().endswith(AO_SUFFIX + file_ext):
+            if filename.lower().endswith(file_ext) and not filename.lower().endswith(NORMAL_SUFFIX + file_ext) and not filename.lower().endswith(ROUGHNESS_SUFFIX + file_ext):
                 files.append(os.path.join(root,filename))
 
     return files
@@ -93,12 +91,12 @@ def relative_path(s, base):
 
 print('--------------------------------------------------------------------------------------------------------')
 print('Source 2 VMAT Generator! By pack via Github.')
-print('Initially forked by Alpyne, this version by caseytube and Rectus. Not many edited by avmal0, just added ambient occlusion texture')
+print('Initially forked by Alpyne, this version by caseytube and Rectus.')
 print('--------------------------------------------------------------------------------------------------------')
 abspath = ''
 files = []
 
-PATH_TO_CONTENT_ROOT = input("What folder would you like to convert? Valid Format: C:\\Steam\\steamapps\\common\\sbox\\addons\\stalker\\materials: ").lower()
+PATH_TO_CONTENT_ROOT = input("What folder would you like to convert? Valid Format: C:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life Alyx\\content\\hl2\\materials\\: ").lower()
 if not os.path.exists(PATH_TO_CONTENT_ROOT):
     print("Please respond with a valid folder or file path! Quitting Process!")
     quit()
@@ -119,25 +117,21 @@ for filename in files:
     print('Importing', os.path.basename(filename))
 
     sourcePath = "materials" + filename.split("materials", 1)[1] # HACK?
-    png_path = fix_path(sourcePath)
+    tga_path = fix_path(sourcePath)
 
     file_name_out_ext = os.path.basename(filename).replace(INPUT_FILE_EXT, "")
 
     normal_file = filename.replace(INPUT_FILE_EXT, NORMAL_SUFFIX + INPUT_FILE_EXT)
     roughness_file = filename.replace(INPUT_FILE_EXT, ROUGHNESS_SUFFIX + INPUT_FILE_EXT)
-    ao_file = filename.replace(INPUT_FILE_EXT, AO_SUFFIX + INPUT_FILE_EXT)
 
     with open(out_name, 'w') as out:
         out_content = VMAT_BASE
-        out_content = out_content.replace('<texture_color>', png_path)
+        out_content = out_content.replace('<texture_color>', tga_path)
 
         out_content = out_content.replace('<texture_normal>', fix_path("materials" + normal_file.split("materials", 1)[1]) if os.path.isfile( normal_file ) else "materials\default\default_normal.tga")
-        
         out_content = out_content.replace('<texture_roughness>', fix_path("materials" + roughness_file.split("materials", 1)[1]) if os.path.isfile( roughness_file ) else "materials\default\default_rough.tga")
-        
-        out_content = out_content.replace('<texture_ao>', fix_path("materials" + ao_file.split("materials", 1)[1]) if os.path.isfile ( ao_file ) else "materials\default\default_ao.tga")
 
-        out_content = out_content.replace((' ' * 5), '\t')
+        out_content = out_content.replace((' ' * 4), '\t')
 
         putl(out, out_content)
 
